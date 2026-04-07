@@ -329,49 +329,80 @@ function AgentsSection() {
 }
 
 // ─── Settings ───
-function SettingsSection({ theme, setTheme, onLogout }: { theme: ThemeMode; setTheme: (t: ThemeMode) => void; onLogout: () => void }) {
+function SettingsSection({ theme, setTheme, onLogout, role, currentUser, lang, setLang }: {
+  theme: ThemeMode; setTheme: (t: ThemeMode) => void; onLogout: () => void;
+  role: string; currentUser: string; lang: Lang; setLang: (l: Lang) => void;
+}) {
+  const { t } = useLang();
   const [newUser, setNewUser] = useState("");
   const [newPass, setNewPass] = useState("");
   const [newRole, setNewRole] = useState("analyst");
+  const [curPass, setCurPass] = useState("");
+  const [chPass, setChPass] = useState("");
+  const [chPass2, setChPass2] = useState("");
+
+  const inputCls = "w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
     <div className="space-y-6">
-      <h2 className="font-title text-xl text-primary neon-text">Configuración</h2>
+      <h2 className="font-title text-xl text-primary neon-text">{t.settings}</h2>
 
-      {/* Theme Toggle */}
+      {/* Theme */}
       <div className="card-sentinel rounded-xl p-6 space-y-4">
-        <h3 className="text-sm font-bold text-muted-foreground">🎨 MODO DE APARIENCIA</h3>
+        <h3 className="text-sm font-bold text-muted-foreground">🎨 {t.appearance}</h3>
         <div className="flex gap-3">
-          <button
-            onClick={() => setTheme("dark")}
-            className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "dark" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
-          >
-            🌙 Oscuro
-          </button>
-          <button
-            onClick={() => setTheme("light")}
-            className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "light" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
-          >
-            ☀️ Claro
-          </button>
+          <button onClick={() => setTheme("dark")} className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "dark" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>🌙 {t.dark}</button>
+          <button onClick={() => setTheme("light")} className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "light" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>☀️ {t.light}</button>
         </div>
       </div>
 
-      {/* User Management */}
+      {/* Language */}
       <div className="card-sentinel rounded-xl p-6 space-y-4">
-        <h3 className="text-sm font-bold text-muted-foreground">👥 GESTIÓN DE USUARIOS</h3>
-        <input className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Nuevo usuario" value={newUser} onChange={(e) => setNewUser(e.target.value)} />
-        <input className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" type="password" placeholder="Contraseña" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
-        <select className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
-          <option value="analyst">Analyst</option>
-          <option value="admin">Admin</option>
-        </select>
-        <button onClick={() => { if (newUser && newPass) { alert(`Usuario ${newUser} creado`); setNewUser(""); setNewPass(""); } }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">Crear Usuario</button>
+        <h3 className="text-sm font-bold text-muted-foreground">🌐 {t.language}</h3>
+        <div className="flex gap-3">
+          <button onClick={() => setLang("es")} className={`flex-1 py-3 rounded-lg font-bold transition ${lang === "es" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>🇪🇸 Español</button>
+          <button onClick={() => setLang("en")} className={`flex-1 py-3 rounded-lg font-bold transition ${lang === "en" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>🇺🇸 English</button>
+        </div>
       </div>
+
+      {/* Change Own Password */}
+      <div className="card-sentinel rounded-xl p-6 space-y-4">
+        <h3 className="text-sm font-bold text-muted-foreground">🔑 {t.changePassword}</h3>
+        <input className={inputCls} type="password" placeholder={t.currentPass} value={curPass} onChange={(e) => setCurPass(e.target.value)} />
+        <input className={inputCls} type="password" placeholder={t.newPass} value={chPass} onChange={(e) => setChPass(e.target.value)} />
+        <input className={inputCls} type="password" placeholder={t.confirmPass} value={chPass2} onChange={(e) => setChPass2(e.target.value)} />
+        <button onClick={() => {
+          if (chPass !== chPass2) { alert(t.passMismatch); return; }
+          if (usersStore[currentUser]?.password !== curPass) { alert(t.wrongCurrentPass); return; }
+          usersStore[currentUser].password = chPass;
+          setCurPass(""); setChPass(""); setChPass2("");
+          alert(t.passUpdated);
+        }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">{t.updatePass}</button>
+      </div>
+
+      {/* User Management - Admin only */}
+      {role === "admin" && (
+        <div className="card-sentinel rounded-xl p-6 space-y-4">
+          <h3 className="text-sm font-bold text-muted-foreground">👥 {t.userMgmt}</h3>
+          <input className={inputCls} placeholder={t.newUser} value={newUser} onChange={(e) => setNewUser(e.target.value)} />
+          <input className={inputCls} type="password" placeholder={t.password} value={newPass} onChange={(e) => setNewPass(e.target.value)} />
+          <select className={inputCls} value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+            <option value="analyst">Analyst</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button onClick={() => {
+            if (newUser && newPass) {
+              usersStore[newUser.toLowerCase()] = { password: newPass, role: newRole };
+              alert(`${t.userCreated}: ${newUser}`);
+              setNewUser(""); setNewPass("");
+            }
+          }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">{t.createUser}</button>
+        </div>
+      )}
 
       {/* Agent Installer */}
       <div className="card-sentinel rounded-xl p-6 space-y-4">
-        <h3 className="text-sm font-bold text-muted-foreground">📦 INSTALADOR DE AGENTE</h3>
+        <h3 className="text-sm font-bold text-muted-foreground">📦 {t.agentInstaller}</h3>
         <button onClick={() => {
           const batch = `@echo off\necho SENTINEL AGENT INSTALLER\npause`;
           const blob = new Blob([batch], { type: "application/bat" });
@@ -381,7 +412,7 @@ function SettingsSection({ theme, setTheme, onLogout }: { theme: ThemeMode; setT
           document.body.appendChild(a); a.click();
           document.body.removeChild(a); URL.revokeObjectURL(url);
         }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">
-          Descargar Instalador (.bat)
+          {t.downloadInstaller}
         </button>
       </div>
     </div>
@@ -436,7 +467,6 @@ export default function Index() {
   return (
     <LangContext.Provider value={langCtx}>
       <div className="flex min-h-screen bg-background">
-        {/* Sidebar */}
         <aside className="w-64 bg-sidebar flex flex-col border-r border-sidebar-border shrink-0">
           <div className="p-6 flex items-center gap-3 border-b border-sidebar-border">
             <span className="text-3xl font-title font-bold text-primary neon-text">S</span>
@@ -463,7 +493,6 @@ export default function Index() {
           </div>
         </aside>
 
-        {/* Main */}
         <main className="flex-1 flex flex-col min-h-screen">
           <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-card">
             <p className="text-sm text-muted-foreground">{t.welcome}, <span className="text-primary font-bold">{user}</span></p>
@@ -497,73 +526,5 @@ export default function Index() {
         </main>
       </div>
     </LangContext.Provider>
-  );
-}
-  };
-
-  return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-sidebar flex flex-col border-r border-sidebar-border shrink-0">
-        <div className="p-6 flex items-center gap-3 border-b border-sidebar-border">
-          <span className="text-3xl font-title font-bold text-primary neon-text">S</span>
-          <div>
-            <p className="font-title text-sm font-bold text-primary neon-text">SENTINEL</p>
-            <p className="text-xs text-muted-foreground">AI GUARDIAN v2.0</p>
-          </div>
-        </div>
-        <nav className="flex-1 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSection(item.id)}
-              className={`w-full text-left px-6 py-3 text-sm flex items-center gap-3 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${section === item.id ? "nav-item-active" : "text-sidebar-foreground"}`}
-            >
-              <span>{item.icon}</span> {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-sidebar-border">
-          <button onClick={() => setLoggedIn(false)} className="w-full py-2 rounded-lg bg-destructive/20 text-destructive text-sm font-bold hover:bg-destructive/30 transition">
-            🚪 Cerrar sesión
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 flex flex-col min-h-screen">
-        {/* Top bar */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-card">
-          <p className="text-sm text-muted-foreground">Bienvenido, <span className="text-primary font-bold">{user}</span></p>
-          <div className="relative">
-            <button onClick={() => setShowNotifs(!showNotifs)} className="relative text-muted-foreground hover:text-primary transition">
-              🔔
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-2 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{notifications.length}</span>
-              )}
-            </button>
-            {showNotifs && (
-              <div className="absolute right-0 top-10 w-72 card-sentinel rounded-xl p-4 z-50 space-y-2">
-                {notifications.map((n, i) => (
-                  <div key={i} className="flex gap-2 text-xs">
-                    <span className="text-muted-foreground">{n.time}</span>
-                    <span className="text-foreground">{n.msg}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div key={section} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              {renderSection()}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
-    </div>
   );
 }
