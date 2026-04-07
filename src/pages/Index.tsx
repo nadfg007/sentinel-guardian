@@ -1,18 +1,70 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ───
 type Section = "dashboard" | "alerts" | "events" | "threat" | "sentinel" | "agents" | "settings";
 type ThemeMode = "dark" | "light";
+type Lang = "es" | "en";
 
-const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
-  { id: "dashboard", icon: "📊", label: "DASHBOARD" },
-  { id: "alerts", icon: "🔔", label: "ALERTS" },
-  { id: "events", icon: "📋", label: "EVENTS" },
-  { id: "threat", icon: "🌐", label: "THREAT INTEL" },
-  { id: "sentinel", icon: "🤖", label: "SENTINEL AI" },
-  { id: "agents", icon: "💻", label: "AGENTS" },
-  { id: "settings", icon: "⚙️", label: "SETTINGS" },
+// ─── i18n ───
+const T: Record<Lang, Record<string, string>> = {
+  es: {
+    dashboard: "DASHBOARD", alerts: "ALERTAS", events: "EVENTOS", threatIntel: "THREAT INTEL",
+    sentinelAi: "SENTINEL AI", agents: "AGENTES", settings: "CONFIGURACIÓN",
+    welcome: "Bienvenido", logout: "Cerrar sesión", login: "INICIAR SESIÓN",
+    user: "Usuario", password: "Contraseña", invalidCreds: "Credenciales inválidas",
+    hint: "Prueba: nadia/1234 o admin/admin",
+    totalAlerts: "Alertas Totales", critical: "Críticas", activeAgents: "Agentes Activos", eventsHour: "Eventos/hora",
+    alerts24h: "ALERTAS (24H)", severity: "SEVERIDAD",
+    realTimeAlerts: "Alertas en Tiempo Real", securityEvents: "Eventos de Seguridad",
+    time: "Hora", source: "Origen", destination: "Destino", type: "Tipo",
+    appearance: "MODO DE APARIENCIA", dark: "Oscuro", light: "Claro",
+    userMgmt: "GESTIÓN DE USUARIOS", newUser: "Nuevo usuario", createUser: "Crear Usuario",
+    agentInstaller: "INSTALADOR DE AGENTE", downloadInstaller: "Descargar Instalador (.bat)",
+    changePassword: "CAMBIAR CONTRASEÑA", currentPass: "Contraseña actual", newPass: "Nueva contraseña",
+    confirmPass: "Confirmar contraseña", updatePass: "Actualizar Contraseña",
+    language: "IDIOMA", aiConfig: "CONFIGURACIÓN IA", recentAnalysis: "ANÁLISIS RECIENTE",
+    userCreated: "Usuario creado", passUpdated: "Contraseña actualizada",
+    passMismatch: "Las contraseñas no coinciden", wrongCurrentPass: "Contraseña actual incorrecta",
+  },
+  en: {
+    dashboard: "DASHBOARD", alerts: "ALERTS", events: "EVENTS", threatIntel: "THREAT INTEL",
+    sentinelAi: "SENTINEL AI", agents: "AGENTS", settings: "SETTINGS",
+    welcome: "Welcome", logout: "Logout", login: "LOG IN",
+    user: "Username", password: "Password", invalidCreds: "Invalid credentials",
+    hint: "Try: nadia/1234 or admin/admin",
+    totalAlerts: "Total Alerts", critical: "Critical", activeAgents: "Active Agents", eventsHour: "Events/hour",
+    alerts24h: "ALERTS (24H)", severity: "SEVERITY",
+    realTimeAlerts: "Real-Time Alerts", securityEvents: "Security Events",
+    time: "Time", source: "Source", destination: "Destination", type: "Type",
+    appearance: "APPEARANCE MODE", dark: "Dark", light: "Light",
+    userMgmt: "USER MANAGEMENT", newUser: "New user", createUser: "Create User",
+    agentInstaller: "AGENT INSTALLER", downloadInstaller: "Download Installer (.bat)",
+    changePassword: "CHANGE PASSWORD", currentPass: "Current password", newPass: "New password",
+    confirmPass: "Confirm password", updatePass: "Update Password",
+    language: "LANGUAGE", aiConfig: "AI CONFIGURATION", recentAnalysis: "RECENT ANALYSIS",
+    userCreated: "User created", passUpdated: "Password updated",
+    passMismatch: "Passwords don't match", wrongCurrentPass: "Wrong current password",
+  },
+};
+
+const LangContext = createContext<{ t: Record<string, string>; lang: Lang }>({ t: T.es, lang: "es" });
+const useLang = () => useContext(LangContext);
+
+// ─── Shared users store (in-memory) ───
+const usersStore: Record<string, { password: string; role: string }> = {
+  admin: { password: "admin", role: "admin" },
+  nadia: { password: "1234", role: "admin" },
+};
+
+const NAV_ITEMS: { id: Section; icon: string; labelKey: string }[] = [
+  { id: "dashboard", icon: "📊", labelKey: "dashboard" },
+  { id: "alerts", icon: "🔔", labelKey: "alerts" },
+  { id: "events", icon: "📋", labelKey: "events" },
+  { id: "threat", icon: "🌐", labelKey: "threatIntel" },
+  { id: "sentinel", icon: "🤖", labelKey: "sentinelAi" },
+  { id: "agents", icon: "💻", labelKey: "agents" },
+  { id: "settings", icon: "⚙️", labelKey: "settings" },
 ];
 
 // ─── Login ───
