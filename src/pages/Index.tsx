@@ -1,18 +1,70 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ───
 type Section = "dashboard" | "alerts" | "events" | "threat" | "sentinel" | "agents" | "settings";
 type ThemeMode = "dark" | "light";
+type Lang = "es" | "en";
 
-const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
-  { id: "dashboard", icon: "📊", label: "DASHBOARD" },
-  { id: "alerts", icon: "🔔", label: "ALERTS" },
-  { id: "events", icon: "📋", label: "EVENTS" },
-  { id: "threat", icon: "🌐", label: "THREAT INTEL" },
-  { id: "sentinel", icon: "🤖", label: "SENTINEL AI" },
-  { id: "agents", icon: "💻", label: "AGENTS" },
-  { id: "settings", icon: "⚙️", label: "SETTINGS" },
+// ─── i18n ───
+const T: Record<Lang, Record<string, string>> = {
+  es: {
+    dashboard: "DASHBOARD", alerts: "ALERTAS", events: "EVENTOS", threatIntel: "THREAT INTEL",
+    sentinelAi: "SENTINEL AI", agents: "AGENTES", settings: "CONFIGURACIÓN",
+    welcome: "Bienvenido", logout: "Cerrar sesión", login: "INICIAR SESIÓN",
+    user: "Usuario", password: "Contraseña", invalidCreds: "Credenciales inválidas",
+    hint: "Prueba: nadia/1234 o admin/admin",
+    totalAlerts: "Alertas Totales", critical: "Críticas", activeAgents: "Agentes Activos", eventsHour: "Eventos/hora",
+    alerts24h: "ALERTAS (24H)", severity: "SEVERIDAD",
+    realTimeAlerts: "Alertas en Tiempo Real", securityEvents: "Eventos de Seguridad",
+    time: "Hora", source: "Origen", destination: "Destino", type: "Tipo",
+    appearance: "MODO DE APARIENCIA", dark: "Oscuro", light: "Claro",
+    userMgmt: "GESTIÓN DE USUARIOS", newUser: "Nuevo usuario", createUser: "Crear Usuario",
+    agentInstaller: "INSTALADOR DE AGENTE", downloadInstaller: "Descargar Instalador (.bat)",
+    changePassword: "CAMBIAR CONTRASEÑA", currentPass: "Contraseña actual", newPass: "Nueva contraseña",
+    confirmPass: "Confirmar contraseña", updatePass: "Actualizar Contraseña",
+    language: "IDIOMA", aiConfig: "CONFIGURACIÓN IA", recentAnalysis: "ANÁLISIS RECIENTE",
+    userCreated: "Usuario creado", passUpdated: "Contraseña actualizada",
+    passMismatch: "Las contraseñas no coinciden", wrongCurrentPass: "Contraseña actual incorrecta",
+  },
+  en: {
+    dashboard: "DASHBOARD", alerts: "ALERTS", events: "EVENTS", threatIntel: "THREAT INTEL",
+    sentinelAi: "SENTINEL AI", agents: "AGENTS", settings: "SETTINGS",
+    welcome: "Welcome", logout: "Logout", login: "LOG IN",
+    user: "Username", password: "Password", invalidCreds: "Invalid credentials",
+    hint: "Try: nadia/1234 or admin/admin",
+    totalAlerts: "Total Alerts", critical: "Critical", activeAgents: "Active Agents", eventsHour: "Events/hour",
+    alerts24h: "ALERTS (24H)", severity: "SEVERITY",
+    realTimeAlerts: "Real-Time Alerts", securityEvents: "Security Events",
+    time: "Time", source: "Source", destination: "Destination", type: "Type",
+    appearance: "APPEARANCE MODE", dark: "Dark", light: "Light",
+    userMgmt: "USER MANAGEMENT", newUser: "New user", createUser: "Create User",
+    agentInstaller: "AGENT INSTALLER", downloadInstaller: "Download Installer (.bat)",
+    changePassword: "CHANGE PASSWORD", currentPass: "Current password", newPass: "New password",
+    confirmPass: "Confirm password", updatePass: "Update Password",
+    language: "LANGUAGE", aiConfig: "AI CONFIGURATION", recentAnalysis: "RECENT ANALYSIS",
+    userCreated: "User created", passUpdated: "Password updated",
+    passMismatch: "Passwords don't match", wrongCurrentPass: "Wrong current password",
+  },
+};
+
+const LangContext = createContext<{ t: Record<string, string>; lang: Lang }>({ t: T.es, lang: "es" });
+const useLang = () => useContext(LangContext);
+
+// ─── Shared users store (in-memory) ───
+const usersStore: Record<string, { password: string; role: string }> = {
+  admin: { password: "admin", role: "admin" },
+  nadia: { password: "1234", role: "admin" },
+};
+
+const NAV_ITEMS: { id: Section; icon: string; labelKey: string }[] = [
+  { id: "dashboard", icon: "📊", labelKey: "dashboard" },
+  { id: "alerts", icon: "🔔", labelKey: "alerts" },
+  { id: "events", icon: "📋", labelKey: "events" },
+  { id: "threat", icon: "🌐", labelKey: "threatIntel" },
+  { id: "sentinel", icon: "🤖", labelKey: "sentinelAi" },
+  { id: "agents", icon: "💻", labelKey: "agents" },
+  { id: "settings", icon: "⚙️", labelKey: "settings" },
 ];
 
 // ─── Login ───
@@ -20,18 +72,14 @@ function LoginScreen({ onLogin }: { onLogin: (user: string, role: string) => voi
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  const users: Record<string, { password: string; role: string }> = {
-    admin: { password: "admin", role: "admin" },
-    nadia: { password: "1234", role: "admin" },
-  };
+  const { t } = useLang();
 
   const handleLogin = () => {
-    const u = users[username.toLowerCase()];
+    const u = usersStore[username.toLowerCase()];
     if (u && u.password === password) {
-      onLogin(username, u.role);
+      onLogin(username.toLowerCase(), u.role);
     } else {
-      setError("Credenciales inválidas");
+      setError(t.invalidCreds);
     }
   };
 
@@ -47,7 +95,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: string, role: string) => voi
         {error && <p className="text-destructive text-sm">{error}</p>}
         <input
           className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Usuario"
+          placeholder={t.user}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -55,7 +103,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: string, role: string) => voi
         <input
           className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           type="password"
-          placeholder="Contraseña"
+          placeholder={t.password}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -64,9 +112,9 @@ function LoginScreen({ onLogin }: { onLogin: (user: string, role: string) => voi
           onClick={handleLogin}
           className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90 transition"
         >
-          INICIAR SESIÓN
+          {t.login}
         </button>
-        <p className="text-xs text-muted-foreground">Prueba: nadia/1234 o admin/admin</p>
+        <p className="text-xs text-muted-foreground">{t.hint}</p>
       </motion.div>
     </div>
   );
@@ -281,49 +329,80 @@ function AgentsSection() {
 }
 
 // ─── Settings ───
-function SettingsSection({ theme, setTheme, onLogout }: { theme: ThemeMode; setTheme: (t: ThemeMode) => void; onLogout: () => void }) {
+function SettingsSection({ theme, setTheme, onLogout, role, currentUser, lang, setLang }: {
+  theme: ThemeMode; setTheme: (t: ThemeMode) => void; onLogout: () => void;
+  role: string; currentUser: string; lang: Lang; setLang: (l: Lang) => void;
+}) {
+  const { t } = useLang();
   const [newUser, setNewUser] = useState("");
   const [newPass, setNewPass] = useState("");
   const [newRole, setNewRole] = useState("analyst");
+  const [curPass, setCurPass] = useState("");
+  const [chPass, setChPass] = useState("");
+  const [chPass2, setChPass2] = useState("");
+
+  const inputCls = "w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
     <div className="space-y-6">
-      <h2 className="font-title text-xl text-primary neon-text">Configuración</h2>
+      <h2 className="font-title text-xl text-primary neon-text">{t.settings}</h2>
 
-      {/* Theme Toggle */}
+      {/* Theme */}
       <div className="card-sentinel rounded-xl p-6 space-y-4">
-        <h3 className="text-sm font-bold text-muted-foreground">🎨 MODO DE APARIENCIA</h3>
+        <h3 className="text-sm font-bold text-muted-foreground">🎨 {t.appearance}</h3>
         <div className="flex gap-3">
-          <button
-            onClick={() => setTheme("dark")}
-            className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "dark" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
-          >
-            🌙 Oscuro
-          </button>
-          <button
-            onClick={() => setTheme("light")}
-            className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "light" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
-          >
-            ☀️ Claro
-          </button>
+          <button onClick={() => setTheme("dark")} className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "dark" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>🌙 {t.dark}</button>
+          <button onClick={() => setTheme("light")} className={`flex-1 py-3 rounded-lg font-bold transition ${theme === "light" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>☀️ {t.light}</button>
         </div>
       </div>
 
-      {/* User Management */}
+      {/* Language */}
       <div className="card-sentinel rounded-xl p-6 space-y-4">
-        <h3 className="text-sm font-bold text-muted-foreground">👥 GESTIÓN DE USUARIOS</h3>
-        <input className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Nuevo usuario" value={newUser} onChange={(e) => setNewUser(e.target.value)} />
-        <input className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" type="password" placeholder="Contraseña" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
-        <select className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
-          <option value="analyst">Analyst</option>
-          <option value="admin">Admin</option>
-        </select>
-        <button onClick={() => { if (newUser && newPass) { alert(`Usuario ${newUser} creado`); setNewUser(""); setNewPass(""); } }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">Crear Usuario</button>
+        <h3 className="text-sm font-bold text-muted-foreground">🌐 {t.language}</h3>
+        <div className="flex gap-3">
+          <button onClick={() => setLang("es")} className={`flex-1 py-3 rounded-lg font-bold transition ${lang === "es" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>🇪🇸 Español</button>
+          <button onClick={() => setLang("en")} className={`flex-1 py-3 rounded-lg font-bold transition ${lang === "en" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>🇺🇸 English</button>
+        </div>
       </div>
+
+      {/* Change Own Password */}
+      <div className="card-sentinel rounded-xl p-6 space-y-4">
+        <h3 className="text-sm font-bold text-muted-foreground">🔑 {t.changePassword}</h3>
+        <input className={inputCls} type="password" placeholder={t.currentPass} value={curPass} onChange={(e) => setCurPass(e.target.value)} />
+        <input className={inputCls} type="password" placeholder={t.newPass} value={chPass} onChange={(e) => setChPass(e.target.value)} />
+        <input className={inputCls} type="password" placeholder={t.confirmPass} value={chPass2} onChange={(e) => setChPass2(e.target.value)} />
+        <button onClick={() => {
+          if (chPass !== chPass2) { alert(t.passMismatch); return; }
+          if (usersStore[currentUser]?.password !== curPass) { alert(t.wrongCurrentPass); return; }
+          usersStore[currentUser].password = chPass;
+          setCurPass(""); setChPass(""); setChPass2("");
+          alert(t.passUpdated);
+        }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">{t.updatePass}</button>
+      </div>
+
+      {/* User Management - Admin only */}
+      {role === "admin" && (
+        <div className="card-sentinel rounded-xl p-6 space-y-4">
+          <h3 className="text-sm font-bold text-muted-foreground">👥 {t.userMgmt}</h3>
+          <input className={inputCls} placeholder={t.newUser} value={newUser} onChange={(e) => setNewUser(e.target.value)} />
+          <input className={inputCls} type="password" placeholder={t.password} value={newPass} onChange={(e) => setNewPass(e.target.value)} />
+          <select className={inputCls} value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+            <option value="analyst">Analyst</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button onClick={() => {
+            if (newUser && newPass) {
+              usersStore[newUser.toLowerCase()] = { password: newPass, role: newRole };
+              alert(`${t.userCreated}: ${newUser}`);
+              setNewUser(""); setNewPass("");
+            }
+          }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">{t.createUser}</button>
+        </div>
+      )}
 
       {/* Agent Installer */}
       <div className="card-sentinel rounded-xl p-6 space-y-4">
-        <h3 className="text-sm font-bold text-muted-foreground">📦 INSTALADOR DE AGENTE</h3>
+        <h3 className="text-sm font-bold text-muted-foreground">📦 {t.agentInstaller}</h3>
         <button onClick={() => {
           const batch = `@echo off\necho SENTINEL AGENT INSTALLER\npause`;
           const blob = new Blob([batch], { type: "application/bat" });
@@ -333,7 +412,7 @@ function SettingsSection({ theme, setTheme, onLogout }: { theme: ThemeMode; setT
           document.body.appendChild(a); a.click();
           document.body.removeChild(a); URL.revokeObjectURL(url);
         }} className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90">
-          Descargar Instalador (.bat)
+          {t.downloadInstaller}
         </button>
       </div>
     </div>
@@ -344,25 +423,33 @@ function SettingsSection({ theme, setTheme, onLogout }: { theme: ThemeMode; setT
 export default function Index() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState("");
+  const [role, setRole] = useState("");
   const [section, setSection] = useState<Section>("dashboard");
   const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem("sentinel-theme") as ThemeMode) || "dark");
+  const [lang, setLang] = useState<Lang>(() => (localStorage.getItem("sentinel-lang") as Lang) || "es");
   const [notifications] = useState([
     { time: "14:32", msg: "Brute Force SSH detectado" },
     { time: "14:28", msg: "Firma de malware encontrada" },
   ]);
   const [showNotifs, setShowNotifs] = useState(false);
+  const t = T[lang];
 
   useEffect(() => {
     localStorage.setItem("sentinel-theme", theme);
-    if (theme === "light") {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
-    }
+    if (theme === "light") document.documentElement.classList.add("light");
+    else document.documentElement.classList.remove("light");
   }, [theme]);
 
+  useEffect(() => { localStorage.setItem("sentinel-lang", lang); }, [lang]);
+
+  const langCtx = { t, lang };
+
   if (!loggedIn) {
-    return <LoginScreen onLogin={(u) => { setUser(u); setLoggedIn(true); }} />;
+    return (
+      <LangContext.Provider value={langCtx}>
+        <LoginScreen onLogin={(u, r) => { setUser(u); setRole(r); setLoggedIn(true); }} />
+      </LangContext.Provider>
+    );
   }
 
   const renderSection = () => {
@@ -373,73 +460,71 @@ export default function Index() {
       case "threat": return <ThreatSection />;
       case "sentinel": return <SentinelAISection />;
       case "agents": return <AgentsSection />;
-      case "settings": return <SettingsSection theme={theme} setTheme={setTheme} onLogout={() => setLoggedIn(false)} />;
+      case "settings": return <SettingsSection theme={theme} setTheme={setTheme} onLogout={() => setLoggedIn(false)} role={role} currentUser={user} lang={lang} setLang={setLang} />;
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-sidebar flex flex-col border-r border-sidebar-border shrink-0">
-        <div className="p-6 flex items-center gap-3 border-b border-sidebar-border">
-          <span className="text-3xl font-title font-bold text-primary neon-text">S</span>
-          <div>
-            <p className="font-title text-sm font-bold text-primary neon-text">SENTINEL</p>
-            <p className="text-xs text-muted-foreground">AI GUARDIAN v2.0</p>
+    <LangContext.Provider value={langCtx}>
+      <div className="flex min-h-screen bg-background">
+        <aside className="w-64 bg-sidebar flex flex-col border-r border-sidebar-border shrink-0">
+          <div className="p-6 flex items-center gap-3 border-b border-sidebar-border">
+            <span className="text-3xl font-title font-bold text-primary neon-text">S</span>
+            <div>
+              <p className="font-title text-sm font-bold text-primary neon-text">SENTINEL</p>
+              <p className="text-xs text-muted-foreground">AI GUARDIAN v2.0</p>
+            </div>
           </div>
-        </div>
-        <nav className="flex-1 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSection(item.id)}
-              className={`w-full text-left px-6 py-3 text-sm flex items-center gap-3 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${section === item.id ? "nav-item-active" : "text-sidebar-foreground"}`}
-            >
-              <span>{item.icon}</span> {item.label}
+          <nav className="flex-1 py-4 space-y-1">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setSection(item.id)}
+                className={`w-full text-left px-6 py-3 text-sm flex items-center gap-3 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${section === item.id ? "nav-item-active" : "text-sidebar-foreground"}`}
+              >
+                <span>{item.icon}</span> {t[item.labelKey]}
+              </button>
+            ))}
+          </nav>
+          <div className="p-4 border-t border-sidebar-border">
+            <button onClick={() => setLoggedIn(false)} className="w-full py-2 rounded-lg bg-destructive/20 text-destructive text-sm font-bold hover:bg-destructive/30 transition">
+              🚪 {t.logout}
             </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-sidebar-border">
-          <button onClick={() => setLoggedIn(false)} className="w-full py-2 rounded-lg bg-destructive/20 text-destructive text-sm font-bold hover:bg-destructive/30 transition">
-            🚪 Cerrar sesión
-          </button>
-        </div>
-      </aside>
+          </div>
+        </aside>
 
-      {/* Main */}
-      <main className="flex-1 flex flex-col min-h-screen">
-        {/* Top bar */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-card">
-          <p className="text-sm text-muted-foreground">Bienvenido, <span className="text-primary font-bold">{user}</span></p>
-          <div className="relative">
-            <button onClick={() => setShowNotifs(!showNotifs)} className="relative text-muted-foreground hover:text-primary transition">
-              🔔
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-2 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{notifications.length}</span>
+        <main className="flex-1 flex flex-col min-h-screen">
+          <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-card">
+            <p className="text-sm text-muted-foreground">{t.welcome}, <span className="text-primary font-bold">{user}</span></p>
+            <div className="relative">
+              <button onClick={() => setShowNotifs(!showNotifs)} className="relative text-muted-foreground hover:text-primary transition">
+                🔔
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{notifications.length}</span>
+                )}
+              </button>
+              {showNotifs && (
+                <div className="absolute right-0 top-10 w-72 card-sentinel rounded-xl p-4 z-50 space-y-2">
+                  {notifications.map((n, i) => (
+                    <div key={i} className="flex gap-2 text-xs">
+                      <span className="text-muted-foreground">{n.time}</span>
+                      <span className="text-foreground">{n.msg}</span>
+                    </div>
+                  ))}
+                </div>
               )}
-            </button>
-            {showNotifs && (
-              <div className="absolute right-0 top-10 w-72 card-sentinel rounded-xl p-4 z-50 space-y-2">
-                {notifications.map((n, i) => (
-                  <div key={i} className="flex gap-2 text-xs">
-                    <span className="text-muted-foreground">{n.time}</span>
-                    <span className="text-foreground">{n.msg}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </header>
+            </div>
+          </header>
 
-        {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div key={section} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              {renderSection()}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
-    </div>
+          <div className="flex-1 p-6 overflow-y-auto">
+            <AnimatePresence mode="wait">
+              <motion.div key={section} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                {renderSection()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </main>
+      </div>
+    </LangContext.Provider>
   );
 }
