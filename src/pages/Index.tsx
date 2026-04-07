@@ -32,7 +32,7 @@ const T: Record<Lang, Record<string, string>> = {
   },
   en: {
     dashboard: "DASHBOARD", alerts: "ALERTS", events: "EVENTS", threatIntel: "THREAT INTEL",
-    sentinelAi: "SENTINEL AI", agents: "AGENTS", settings: "SETTINGS",
+    sentinelAi: "SENTINEL AI", agents: "AGENTS", rules: "RULES", settings: "SETTINGS",
     welcome: "Welcome", logout: "Logout", login: "LOG IN",
     user: "Username", password: "Password", invalidCreds: "Invalid credentials",
     hint: "Try: nadia/1234 or admin/admin",
@@ -48,6 +48,9 @@ const T: Record<Lang, Record<string, string>> = {
     language: "LANGUAGE", aiConfig: "AI CONFIGURATION", recentAnalysis: "RECENT ANALYSIS",
     userCreated: "User created", passUpdated: "Password updated",
     passMismatch: "Passwords don't match", wrongCurrentPass: "Wrong current password",
+    rulesTitle: "Detection Rules", ruleId: "Rule ID", ruleDesc: "Description", ruleLevel: "Level",
+    ruleGroup: "Group", ruleStatus: "Status", addRule: "Add Rule", enabled: "Enabled", disabled: "Disabled",
+    ruleName: "Rule name", ruleCondition: "Condition", save: "Save",
   },
 };
 
