@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ───
-type Section = "dashboard" | "alerts" | "events" | "threat" | "sentinel" | "agents" | "settings";
+type Section = "dashboard" | "alerts" | "events" | "threat" | "sentinel" | "agents" | "rules" | "settings";
 type ThemeMode = "dark" | "light";
 type Lang = "es" | "en";
 
