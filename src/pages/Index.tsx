@@ -10,7 +10,7 @@ type Lang = "es" | "en";
 const T: Record<Lang, Record<string, string>> = {
   es: {
     dashboard: "DASHBOARD", alerts: "ALERTAS", events: "EVENTOS", threatIntel: "THREAT INTEL",
-    sentinelAi: "SENTINEL AI", agents: "AGENTES", settings: "CONFIGURACIÓN",
+    sentinelAi: "SENTINEL AI", agents: "AGENTES", rules: "REGLAS", settings: "CONFIGURACIÓN",
     welcome: "Bienvenido", logout: "Cerrar sesión", login: "INICIAR SESIÓN",
     user: "Usuario", password: "Contraseña", invalidCreds: "Credenciales inválidas",
     hint: "Prueba: nadia/1234 o admin/admin",
@@ -26,6 +26,9 @@ const T: Record<Lang, Record<string, string>> = {
     language: "IDIOMA", aiConfig: "CONFIGURACIÓN IA", recentAnalysis: "ANÁLISIS RECIENTE",
     userCreated: "Usuario creado", passUpdated: "Contraseña actualizada",
     passMismatch: "Las contraseñas no coinciden", wrongCurrentPass: "Contraseña actual incorrecta",
+    rulesTitle: "Reglas de Detección", ruleId: "ID Regla", ruleDesc: "Descripción", ruleLevel: "Nivel",
+    ruleGroup: "Grupo", ruleStatus: "Estado", addRule: "Agregar Regla", enabled: "Activa", disabled: "Inactiva",
+    ruleName: "Nombre de la regla", ruleCondition: "Condición", save: "Guardar",
   },
   en: {
     dashboard: "DASHBOARD", alerts: "ALERTS", events: "EVENTS", threatIntel: "THREAT INTEL",
