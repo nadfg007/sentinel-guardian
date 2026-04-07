@@ -551,8 +551,10 @@ export default function Index() {
 
   useEffect(() => {
     localStorage.setItem("sentinel-theme", theme);
-    if (theme === "light") document.documentElement.classList.add("light");
-    else document.documentElement.classList.remove("light");
+    document.documentElement.classList.remove("light", "dark");
+    if (theme === "light") {
+      document.documentElement.classList.add("light");
+    }
   }, [theme]);
 
   useEffect(() => { localStorage.setItem("sentinel-lang", lang); }, [lang]);
