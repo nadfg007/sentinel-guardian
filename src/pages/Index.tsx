@@ -335,6 +335,114 @@ function AgentsSection() {
   );
 }
 
+// ─── Rules (Wazuh-style) ───
+type Rule = { id: string; desc: string; level: number; group: string; enabled: boolean };
+
+const defaultRules: Rule[] = [
+  { id: "100001", desc: "SSH Brute Force - Multiple failed authentication attempts", level: 10, group: "authentication", enabled: true },
+  { id: "100002", desc: "Malware signature detected in network traffic", level: 12, group: "malware", enabled: true },
+  { id: "100003", desc: "Privilege escalation attempt detected", level: 14, group: "privilege_escalation", enabled: true },
+  { id: "100004", desc: "Port scan detected from external source", level: 6, group: "network_scan", enabled: true },
+  { id: "100005", desc: "Unauthorized file modification in /etc", level: 10, group: "file_integrity", enabled: true },
+  { id: "100006", desc: "SQL injection attempt on web application", level: 12, group: "web_attack", enabled: false },
+  { id: "100007", desc: "Rootkit behavior detected on endpoint", level: 15, group: "rootkit", enabled: true },
+  { id: "100008", desc: "DNS exfiltration pattern detected", level: 8, group: "data_exfiltration", enabled: true },
+  { id: "100009", desc: "Failed sudo attempt by non-privileged user", level: 5, group: "authentication", enabled: true },
+  { id: "100010", desc: "Ransomware file encryption behavior", level: 15, group: "malware", enabled: true },
+];
+
+function RulesSection() {
+  const { t } = useLang();
+  const [rules, setRules] = useState<Rule[]>(defaultRules);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newRule, setNewRule] = useState({ id: "", desc: "", level: 5, group: "", enabled: true });
+  const [filter, setFilter] = useState("");
+
+  const inputCls = "w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary";
+
+  const toggleRule = (id: string) => setRules(rules.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
+
+  const filteredRules = rules.filter(r =>
+    r.id.includes(filter) || r.desc.toLowerCase().includes(filter.toLowerCase()) || r.group.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const levelColor = (lvl: number) =>
+    lvl >= 12 ? "bg-destructive text-destructive-foreground" :
+    lvl >= 8 ? "bg-warning text-warning-foreground" :
+    "bg-primary text-primary-foreground";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-title text-xl text-primary neon-text">{t.rulesTitle}</h2>
+        <button onClick={() => setShowAdd(!showAdd)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition">
+          + {t.addRule}
+        </button>
+      </div>
+
+      {/* Add Rule Form */}
+      {showAdd && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="card-sentinel rounded-xl p-6 space-y-4">
+          <h3 className="text-sm font-bold text-muted-foreground">➕ {t.addRule}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input className={inputCls} placeholder={t.ruleId} value={newRule.id} onChange={e => setNewRule({ ...newRule, id: e.target.value })} />
+            <input className={inputCls} placeholder={t.ruleGroup} value={newRule.group} onChange={e => setNewRule({ ...newRule, group: e.target.value })} />
+          </div>
+          <input className={inputCls} placeholder={t.ruleDesc} value={newRule.desc} onChange={e => setNewRule({ ...newRule, desc: e.target.value })} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t.ruleLevel} (0-15)</label>
+              <input className={inputCls} type="number" min={0} max={15} value={newRule.level} onChange={e => setNewRule({ ...newRule, level: Number(e.target.value) })} />
+            </div>
+          </div>
+          <button onClick={() => {
+            if (newRule.id && newRule.desc && newRule.group) {
+              setRules([...rules, { ...newRule }]);
+              setNewRule({ id: "", desc: "", level: 5, group: "", enabled: true });
+              setShowAdd(false);
+            }
+          }} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90 transition">
+            {t.save}
+          </button>
+        </motion.div>
+      )}
+
+      {/* Filter */}
+      <input className={inputCls} placeholder="🔍 Filter rules..." value={filter} onChange={e => setFilter(e.target.value)} />
+
+      {/* Rules Table */}
+      <div className="card-sentinel rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-secondary text-muted-foreground">
+              <th className="p-3 text-left">{t.ruleId}</th>
+              <th className="p-3 text-left">{t.ruleDesc}</th>
+              <th className="p-3 text-left">{t.ruleLevel}</th>
+              <th className="p-3 text-left">{t.ruleGroup}</th>
+              <th className="p-3 text-center">{t.ruleStatus}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRules.map(r => (
+              <tr key={r.id} className="border-t border-border hover:bg-secondary/50">
+                <td className="p-3 font-mono text-primary">{r.id}</td>
+                <td className="p-3 text-foreground">{r.desc}</td>
+                <td className="p-3"><span className={`text-xs font-bold px-2 py-1 rounded ${levelColor(r.level)}`}>{r.level}</span></td>
+                <td className="p-3"><span className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded">{r.group}</span></td>
+                <td className="p-3 text-center">
+                  <button onClick={() => toggleRule(r.id)} className={`text-xs font-bold px-3 py-1 rounded transition ${r.enabled ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"}`}>
+                    {r.enabled ? t.enabled : t.disabled}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Settings ───
 function SettingsSection({ theme, setTheme, onLogout, role, currentUser, lang, setLang }: {
   theme: ThemeMode; setTheme: (t: ThemeMode) => void; onLogout: () => void;
