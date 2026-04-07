@@ -575,6 +575,7 @@ export default function Index() {
       case "threat": return <ThreatSection />;
       case "sentinel": return <SentinelAISection />;
       case "agents": return <AgentsSection />;
+      case "rules": return <RulesSection />;
       case "settings": return <SettingsSection theme={theme} setTheme={setTheme} onLogout={() => setLoggedIn(false)} role={role} currentUser={user} lang={lang} setLang={setLang} />;
     }
   };
