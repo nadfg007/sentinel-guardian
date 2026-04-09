@@ -99,7 +99,7 @@ export function RulesSection() {
             <div><span className="text-muted-foreground">{t.ruleDesc}:</span><p className="text-foreground">{r.desc}</p></div>
             <div><span className="text-muted-foreground">{t.ruleLevel}:</span>
               <div className="flex items-center gap-2 mt-1">
-                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden"><div className={`h-full ${lvl >= 12 ? "bg-destructive" : lvl >= 8 ? "bg-warning" : "bg-primary"}`} style={{ width: `${(r.level / 15) * 100}%` }} /></div>
+                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden"><div className={`h-full ${r.level >= 12 ? "bg-destructive" : r.level >= 8 ? "bg-warning" : "bg-primary"}`} style={{ width: `${(r.level / 15) * 100}%` }} /></div>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded ${levelColor(r.level)}`}>{r.level}</span>
               </div>
             </div>
